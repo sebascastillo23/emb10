@@ -1,32 +1,83 @@
-<!DOCTYPE html>
-<html>
-<head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
-<script src="/static/js/index.js"></script>
-<title>EMBEBIDOS</title>
-</head>
-<body>
+from datetime import datetime
+import time
+import paho.mqtt.client as mqtt
+import RPi.GPIO as GPIO
 
-<h1>Embebidos</h1>
-<img id="imagen" src="/static/images/iot.png" alt="user">
-<h1>Sensor:</h><h id="sensor">--</h1>
-<button id = 'LED1On'type="button" onclick="LED1_On();">
-LED1 ON!</button>
-<button id = 'LED1Off' type="button" onclick="LED1_Off();">
-LED1_OFF!</button>
+GPIO.setmode(GPIO.BCM)
 
-<script>
-/*
-function LED1_On() {
-	alert("led on");
-	console.log("led on");
-  
-}
-function LED1_Off(){
-	alert("led off");
-	console.log("led off");
-}
-*/
-</script>
-</body>
-</html>
+pulsador=5
+led=12
+pulsador1=6
+led1=13
+
+            
+def main():
+    estado=0
+    val=0
+    valAnt=0
+    estado1=0
+    val1=0
+    valAnt1=0
+    usuario="licha_05reyes@outlook.com"
+    password="Galapagos1001"
+    Stopic="licha_05reyes@outlook.com/IoT1"
+    SendTopic="licha_05reyes@outlook.com/IoT"
+    GPIO.setup(pulsador,GPIO.IN)
+    GPIO.setup(led,GPIO.OUT)
+    GPIO.setup(pulsador1,GPIO.IN)
+    GPIO.setup(led1,GPIO.OUT)
+
+    mqttc=mqtt.Client()
+    mqttc.username_pw_set(usuario,password)
+    mqttc.connect("maqiatto.com",1883)
+    mqttc.subscribe(Stopic,0)
+    info="0"
+    while(1):
+        mqttc.loop()
+        f=open("Sensor1.txt","a")
+        f1=open("Sensor2.txt","a")
+        datos=""
+        datos1=""
+        if (estado==0):
+            datos="OFF"
+        else:
+            datos="ON"
+        if (estado1==0):
+            datos1="OFF"
+        else:
+            datos1="ON"
+
+
+
+        if((datetime.now().second%3)==0):
+            
+            f.write(str(datetime.now())+" Sensor 1 "+ datos+"\n")
+            f=open("Sensor1.txt","r")
+            mqttc.publish(SendTopic,"H1"+f.read())
+            f.close()
+            f1.write(str(datetime.now())+"Sensor 2 "+ datos1+"\n")
+            f1=open("Sensor2.txt","r")
+            mqttc.publish(SendTopic,"H2"+f1.read())
+            f1.close()
+            time.sleep(1)
+        val=GPIO.input(pulsador)
+        if val==1 and valAnt==0:
+            estado=1-estado
+        valAnt=val
+        if estado==1:
+            GPIO.output(12,GPIO.HIGH)
+            time.sleep(1)
+        else:
+            GPIO.output(12,GPIO.LOW)
+            time.sleep(1)
+
+        val1 =GPIO.input(pulsador1)
+        if val1==1 and valAnt1==0:
+            estado1=1-estado1
+        valAnt1=val1
+        if estado1==1:
+            GPIO.output(13,GPIO.HIGH)
+            time.sleep(1)
+        else:
+            GPIO.output(13,GPIO.LOW)
+            time.sleep(1)
